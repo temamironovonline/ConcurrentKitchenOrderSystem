@@ -1,7 +1,7 @@
 package consts
 
 // ClassStation представляет собой псевдоним типа string для более удобного обозначения класса
-type ClassStation = string
+type ClassStation string
 
 const (
 	GrillClass     ClassStation = "grill"

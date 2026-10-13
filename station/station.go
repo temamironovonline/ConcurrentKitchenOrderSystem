@@ -3,7 +3,6 @@ package station
 import (
 	"context"
 	"math/rand"
-	"sync/atomic"
 	"time"
 
 	"main.go/consts"
@@ -12,17 +11,17 @@ import (
 
 // Station представляет собой структуру, которая содержит информация о станции на кухне
 type Station struct {
-	class             consts.ClassStation
-	limitCountWorkers atomic.Int64
+	class    consts.ClassStation
+	cookers  chan struct{}
+	cookTime func() time.Duration
 }
 
 func newStation(class consts.ClassStation, limitWorkers int) *Station {
-	station := &Station{
-		class: class,
+	return &Station{
+		class:    class,
+		cookers:  make(chan struct{}, limitWorkers),
+		cookTime: generateTime,
 	}
-	station.limitCountWorkers.Add(int64(limitWorkers))
-
-	return station
 }
 
 // NewGrillStation создает экземпляр станции для гриля
@@ -45,13 +44,16 @@ func NewBarStation(countWorkers int) *Station {
 	return newStation(consts.BarClass, countWorkers)
 }
 
-// SetLimitCountWorkers позволяет изменять лимит количества работников
-func (s *Station) SetLimitCountWorkers(count int) {
-	s.limitCountWorkers.Add(int64(count))
-}
-
 // Cook представляет собой сам процесс приготовления блюда
 func (s *Station) Cook(ctx context.Context, d dish.OrderDish) dish.UpdateOrderDish {
+	// Ждем повара, но не дольше, чем ждем заказ
+	select {
+	case <-ctx.Done():
+		return dish.NewUpdateOrderDish(false, nil, ctx.Err())
+	case s.cookers <- struct{}{}:
+		defer func() { <-s.cookers }() // освобождаем место после окончания работы повара
+	}
+
 	ctxCook, cancel := context.WithTimeout(ctx, d.GetTimeout())
 	defer cancel()
 
@@ -60,11 +62,10 @@ func (s *Station) Cook(ctx context.Context, d dish.OrderDish) dish.UpdateOrderDi
 	select {
 	case <-ctxCook.Done():
 		return dish.NewUpdateOrderDish(false, nil, ctxCook.Err())
-	case <-time.After(generateTime()):
+	case <-time.After(s.cookTime()):
 		elapsed := time.Since(now)
 		return dish.NewUpdateOrderDish(true, &elapsed, nil)
 	}
-
 }
 
 func generateTime() time.Duration {

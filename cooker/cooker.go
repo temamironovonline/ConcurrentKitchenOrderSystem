@@ -1,5 +1,6 @@
 package cooker
 
+/*
 import (
 	"context"
 	"log"
@@ -7,15 +8,23 @@ import (
 
 	"main.go/dish"
 	dishlist "main.go/dish_list"
-	"main.go/station"
 )
 
 type Cooker struct {
-	s *station.Station
+	s StationCook
 	l *dishlist.List
 }
 
-func (c *Cooker) Run(ctx context.Context, wg *sync.WaitGroup, job <-chan int, results chan<- dish.OrderDish) {
+
+
+func NewCooker(s StationCook, l *dishlist.List) *Cooker {
+	return &Cooker{
+		s: s,
+		l: l,
+	}
+}
+
+func (c *Cooker) Run(ctx context.Context, wg *sync.WaitGroup, job <-chan int, results chan<- dish.UpdateOrderDish) {
 	defer wg.Done()
 	for {
 		select {
@@ -32,20 +41,17 @@ func (c *Cooker) Run(ctx context.Context, wg *sync.WaitGroup, job <-chan int, re
 			}
 
 			update := c.s.Cook(ctx, dis)
-
-			res, err := c.l.Update(dis, update)
-			if err != nil {
-				return
-			}
+			update = update.SetID(id)
 
 			select {
 			case <-ctx.Done():
 				log.Println("cooker finished")
 				return
 
-			case results <- res:
+			case results <- update:
 			}
 
 		}
 	}
 }
+*/

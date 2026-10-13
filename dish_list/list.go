@@ -3,6 +3,7 @@ package dishlist
 import (
 	"errors"
 	"log"
+	"sort"
 	"sync"
 
 	"main.go/dish"
@@ -52,4 +53,29 @@ func (l *List) Update(d dish.OrderDish, od dish.UpdateOrderDish) (dish.OrderDish
 	new := d.Update(od)
 	l.list[d.GetID()] = new
 	return new, nil
+}
+
+func (l *List) Get() map[int]dish.OrderDish {
+	tmp := make(map[int]dish.OrderDish)
+
+	for k, v := range l.list {
+		tmp[k] = v
+	}
+
+	return tmp
+}
+
+func (l *List) Snapshots() []dish.Snapshot {
+	l.mtx.Lock()
+	defer l.mtx.Unlock()
+
+	tmp := make([]dish.Snapshot, 0, len(l.list))
+
+	for _, val := range l.list {
+		tmp = append(tmp, val.Snapshot())
+	}
+
+	sort.Slice(tmp, func(i int, j int) bool { return tmp[i].ID < tmp[j].ID })
+
+	return tmp
 }

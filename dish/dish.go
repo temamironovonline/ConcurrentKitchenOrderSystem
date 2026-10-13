@@ -4,16 +4,20 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"main.go/consts"
 )
 
 var idCounter int = 1
 var mtxID sync.Mutex
 
+type StatusCook string
+
 const (
-	StatusCooking  = "cooking"
-	StatusCooked   = "cooked"
-	StatusCanceled = "cancelled"
-	StatusTimeout  = "timeout"
+	StatusCooking  StatusCook = "cooking"
+	StatusCooked   StatusCook = "cooked"
+	StatusCanceled StatusCook = "cancelled"
+	StatusTimeout  StatusCook = "timeout"
 )
 
 // OrderDish представляет собой структуру, которая хранит информацию о конкретном готовящемся блюде
@@ -22,7 +26,7 @@ type OrderDish struct {
 	dish        AvailabilityDish // Ссылка на имеющиеся блюда
 	isReady     bool
 	cookingTime *time.Duration
-	status      string
+	status      StatusCook
 }
 
 // NewOrderDish представляет собой конструктор для создания экземпляра структуры
@@ -41,13 +45,14 @@ func NewOrderDish(dish AvailabilityDish) OrderDish {
 }
 
 type UpdateOrderDish struct {
+	id          int
 	isReady     bool
 	cookingTime *time.Duration
-	status      string
+	status      StatusCook
 }
 
 func NewUpdateOrderDish(isReady bool, cookingTime *time.Duration, errText error) UpdateOrderDish {
-	var status string
+	var status StatusCook
 
 	switch errText {
 	case context.DeadlineExceeded:
@@ -65,6 +70,25 @@ func NewUpdateOrderDish(isReady bool, cookingTime *time.Duration, errText error)
 	}
 }
 
+type Snapshot struct {
+	ID     int
+	Name   string
+	Status StatusCook
+}
+
+func (od OrderDish) Snapshot() Snapshot {
+	return Snapshot{ID: od.id, Name: od.GetName(), Status: od.status}
+}
+
+func (uod UpdateOrderDish) GetStatus() StatusCook {
+	return uod.status
+}
+
+func (uod UpdateOrderDish) SetID(id int) UpdateOrderDish {
+	uod.id = id
+	return uod
+}
+
 func (od OrderDish) GetTimeout() time.Duration {
 	return od.dish.GetTimeout()
 }
@@ -78,4 +102,16 @@ func (od OrderDish) Update(newOD UpdateOrderDish) OrderDish {
 
 func (od OrderDish) GetID() int {
 	return od.id
+}
+
+func (od OrderDish) GetStation() consts.ClassStation {
+	return od.dish.stat
+}
+
+func (od OrderDish) GetName() string {
+	return od.dish.name
+}
+
+func (od OrderDish) GetStatus() StatusCook {
+	return od.status
 }

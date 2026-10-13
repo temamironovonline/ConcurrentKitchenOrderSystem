@@ -18,7 +18,7 @@ func NewAvailabilityDishes(nameDish string, stat consts.ClassStation, t time.Dur
 	return AvailabilityDish{
 		name:     nameDish,
 		stat:     stat,
-		timeCook: t * time.Second,
+		timeCook: t,
 	}
 }
 
