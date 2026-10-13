@@ -2,6 +2,7 @@ package station
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -10,8 +11,8 @@ import (
 	"main.go/dish"
 )
 
-func newTestDish() dish.OrderDish {
-	return dish.NewOrderDish(dish.NewAvailabilityDishes("test", consts.GrillClass, 5*time.Second))
+func newTestDish(seconds time.Duration) dish.OrderDish {
+	return dish.NewOrderDish(dish.NewAvailabilityDishes("test", consts.GrillClass, seconds*time.Second))
 }
 
 func newTestDishWithTimeout(timeout time.Duration) dish.OrderDish {
@@ -21,7 +22,7 @@ func newTestDishWithTimeout(timeout time.Duration) dish.OrderDish {
 func TestStation_RespectsLimit(t *testing.T) {
 	s := newStation(consts.GrillClass, 2)
 	s.cookTime = func() time.Duration { return 100 * time.Millisecond }
-	d := newTestDish()
+	d := newTestDish(5)
 
 	var wg sync.WaitGroup
 
@@ -50,7 +51,7 @@ func TestStation_RespectsLimit(t *testing.T) {
 
 func TestStation_CancelWhileWaitingForCook(t *testing.T) {
 	s := newStation(consts.GrillClass, 1)
-	d := newTestDish()
+	d := newTestDish(5)
 	s.cookTime = func() time.Duration { return 300 * time.Millisecond }
 
 	go s.Cook(context.Background(), d)
@@ -116,6 +117,7 @@ func TestStation_CookResult(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			s := newStation(consts.GrillClass, 1)
 			s.cookTime = func() time.Duration { return tc.cookTime }
+			s.defect = func() error { return nil }
 			d := newTestDishWithTimeout(tc.dishTimeout)
 
 			update := s.Cook(context.Background(), d)
@@ -124,5 +126,40 @@ func TestStation_CookResult(t *testing.T) {
 				t.Errorf("статус: %v, хотели: %v", update.GetStatus(), tc.want)
 			}
 		})
+	}
+}
+
+func TestStation_CheckStatusCooked(t *testing.T) {
+	s := newStation(consts.GrillClass, 1)
+	s.cookTime = func() time.Duration { return 100 * time.Millisecond }
+	s.defect = func() error { return nil }
+	d := newTestDish(2)
+
+	update := s.Cook(context.Background(), d)
+
+	if got := update.GetStatus(); got != dish.StatusCooked {
+		t.Errorf("GetStatus() =  %v, хотели: %v", got, dish.StatusCooked)
+	}
+
+}
+
+func TestStation_CheckStatusFailed(t *testing.T) {
+	s := newStation(consts.GrillClass, 1)
+	s.cookTime = func() time.Duration {
+		return 100 * time.Millisecond
+	}
+	s.defect = func() error {
+		return errors.New("подгорело")
+	}
+	d := newTestDish(2)
+
+	update := s.Cook(context.Background(), d)
+
+	if got := update.GetStatus(); got != dish.StatusFailed {
+		t.Errorf("GetStatus() = %v, хотели: %v", got, dish.StatusFailed)
+	}
+
+	if got := update.GetStatusFailed(); got != "подгорело" {
+		t.Errorf("GetStatusFailed() =  %v, хотели: %v", got, "подгорело")
 	}
 }

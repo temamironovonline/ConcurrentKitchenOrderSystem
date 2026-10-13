@@ -12,6 +12,10 @@ import (
 	"main.go/dish"
 )
 
+const (
+	DefaultTimeoutOrder = 30 * time.Second
+)
+
 type HTTPHandlers struct {
 	ctx                    context.Context
 	c                      *chef.Chef
@@ -29,7 +33,9 @@ func NewHTTPHandlers(ctx context.Context, c *chef.Chef, listAvailabilityDishes *
 func writeAnswerJSON(w http.ResponseWriter, data any, statusCode int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Println("внутренняя ошибка конвертации ответа JSON")
+	}
 }
 
 func writeAnswerError(w http.ResponseWriter, text string, statusCode int) {
@@ -44,7 +50,7 @@ func writeAnswerError(w http.ResponseWriter, text string, statusCode int) {
 func (h *HTTPHandlers) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	var listDTO ListDishesDTO
 	if err := json.NewDecoder(r.Body).Decode(&listDTO); err != nil {
-		writeAnswerError(w, "не удается перевести полученные  данные в json", http.StatusInternalServerError)
+		writeAnswerError(w, "не удается перевести полученные  данные в json", http.StatusBadRequest)
 		return
 	}
 	defer r.Body.Close()
@@ -56,7 +62,11 @@ func (h *HTTPHandlers) HandleCreateOrder(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	id := h.c.CreateOrder(h.ctx, 10, listDTO.List)
+	id, err := h.c.CreateOrder(h.ctx, DefaultTimeoutOrder, listDTO.List)
+	if err != nil {
+		writeAnswerError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	ans := NewCreateOrderAnswerDTO(id, time.Now())
 	writeAnswerJSON(w, ans, http.StatusCreated)
@@ -76,14 +86,12 @@ func getPathValue(r *http.Request) (int, bool) {
 
 func (h *HTTPHandlers) HandleGetIntermediateResult(w http.ResponseWriter, r *http.Request) {
 	id, ok := getPathValue(r)
-
 	if !ok {
 		writeAnswerError(w, "ошибка конвертации в id", http.StatusBadRequest)
 		return
 	}
 
 	snap, err := h.c.GetOrder(id)
-
 	if err != nil {
 		writeAnswerError(w, err.Error(), http.StatusNotFound)
 		return
@@ -91,5 +99,22 @@ func (h *HTTPHandlers) HandleGetIntermediateResult(w http.ResponseWriter, r *htt
 
 	orderDTO := newOrderDTO(snap)
 
+	writeAnswerJSON(w, orderDTO, http.StatusOK)
+}
+
+func (h *HTTPHandlers) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
+	id, ok := getPathValue(r)
+	if !ok {
+		writeAnswerError(w, "ошибка конвертации в id", http.StatusBadRequest)
+		return
+	}
+
+	snap, err := h.c.CancelOrder(id)
+	if err != nil {
+		writeAnswerError(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	orderDTO := newOrderDTO(snap)
 	writeAnswerJSON(w, orderDTO, http.StatusOK)
 }

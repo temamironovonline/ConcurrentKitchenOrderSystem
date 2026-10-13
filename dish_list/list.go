@@ -10,7 +10,7 @@ import (
 )
 
 type List struct {
-	mtx  sync.Mutex
+	mtx  sync.RWMutex
 	list map[int]dish.OrderDish
 }
 
@@ -21,8 +21,8 @@ func NewList() *List {
 }
 
 func (l *List) GetByID(id int) (dish.OrderDish, error) {
-	l.mtx.Lock()
-	defer l.mtx.Unlock()
+	l.mtx.RLock()
+	defer l.mtx.RUnlock()
 	dis, ok := l.list[id]
 	if !ok {
 		log.Println("блюда в заказе с таким ID не существует")
@@ -56,6 +56,8 @@ func (l *List) Update(d dish.OrderDish, od dish.UpdateOrderDish) (dish.OrderDish
 }
 
 func (l *List) Get() map[int]dish.OrderDish {
+	l.mtx.RLock()
+	defer l.mtx.RUnlock()
 	tmp := make(map[int]dish.OrderDish)
 
 	for k, v := range l.list {
@@ -66,8 +68,8 @@ func (l *List) Get() map[int]dish.OrderDish {
 }
 
 func (l *List) Snapshots() []dish.Snapshot {
-	l.mtx.Lock()
-	defer l.mtx.Unlock()
+	l.mtx.RLock()
+	defer l.mtx.RUnlock()
 
 	tmp := make([]dish.Snapshot, 0, len(l.list))
 
