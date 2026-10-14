@@ -20,6 +20,7 @@ const (
 	StatusCanceled OrderStatus = "canceled"
 	StatusTimeout  OrderStatus = "timeout"
 	StatusCooked   OrderStatus = "cooked"
+	StatusFailed   OrderStatus = "failed"
 )
 
 type Order struct {
@@ -115,6 +116,11 @@ func (o *Order) Finish(err error) {
 		for _, v := range tmp {
 			if status := v.GetStatus(); status == dish.StatusTimeout {
 				o.status = StatusTimeout
+				return
+			}
+
+			if status := v.GetStatusFailed(); status != "" {
+				o.status = StatusFailed
 				return
 			}
 		}

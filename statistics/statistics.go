@@ -13,22 +13,38 @@ func NewStatistics() *Statistics {
 	return &Statistics{}
 }
 
-func (s *Statistics) AddAllDishCooked() {
+func (s *Statistics) AddTotalDishesProcessed() {
 	s.allDishCooked.Add(1)
+}
+
+func (s *Statistics) GetTotalDishesProccesed() int64 {
+	return s.allDishCooked.Load()
 }
 
 func (s *Statistics) AddCompletedCooked() {
 	s.completedCooked.Add(1)
 }
 
+func (s *Statistics) GetCompletedCooked() int64 {
+	return s.completedCooked.Load()
+}
+
 func (s *Statistics) AddFailCooked() {
 	s.failCooked.Add(1)
+}
+
+func (s *Statistics) GetFailedCooked() int64 {
+	return s.failCooked.Load()
 }
 
 func (s *Statistics) AddOrderCookingNow() {
 	s.orderCookingNow.Add(1)
 }
 
-func (s *Statistics) SubtractionOrderCookingNow() {
+func (s *Statistics) GetOrderCookingNow() int64 {
+	return s.orderCookingNow.Load()
+}
+
+func (s *Statistics) DecrementOrderCookingNow() {
 	s.orderCookingNow.Add(-1)
 }

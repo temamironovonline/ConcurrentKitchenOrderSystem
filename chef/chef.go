@@ -55,12 +55,27 @@ func (c *Chef) CreateOrder(ctx context.Context, timeout time.Duration, dishes []
 	}
 
 	go func() {
-		defer c.statistic.SubtractionOrderCookingNow()
+		defer c.statistic.DecrementOrderCookingNow()
 		wg.Wait()
 		newOrder.Finish(ctxOrder.Err())
+
+		c.updateStatistics(newOrder)
 	}()
 
 	return newOrder.GetID(), nil
+}
+
+func (c *Chef) updateStatistics(od *order.Order) {
+	tmp := od.Dishes()
+
+	for _, v := range tmp {
+		c.statistic.AddTotalDishesProcessed()
+		if v.GetReadyStatus() {
+			c.statistic.AddCompletedCooked()
+		} else {
+			c.statistic.AddFailCooked()
+		}
+	}
 }
 
 func (c *Chef) GetOrder(id int) (order.Snapshot, error) {
@@ -75,4 +90,8 @@ func (c *Chef) CancelOrder(id int) (order.Snapshot, error) {
 	}
 	ord.Cancel()
 	return ord.Snapshot(), nil
+}
+
+func (c *Chef) GetStatistics() *statistics.Statistics {
+	return c.statistic
 }

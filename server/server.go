@@ -25,7 +25,7 @@ func (s *Server) Start(ctx context.Context) {
 	mux.HandleFunc("POST /orders", s.httpHandlers.HandleCreateOrder)
 	mux.HandleFunc("GET /orders/{id}", s.httpHandlers.HandleGetIntermediateResult)
 	mux.HandleFunc("PATCH /orders/{id}", s.httpHandlers.HandleCancelOrder)
-	//mux Stats
+	mux.HandleFunc("GET /stats", s.httpHandlers.HandleGetStatistics)
 
 	httpServer := &http.Server{
 		Addr:    ":9091",

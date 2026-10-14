@@ -134,3 +134,11 @@ func (od OrderDish) GetName() string {
 func (od OrderDish) GetStatus() StatusCook {
 	return od.status
 }
+
+func (od OrderDish) GetStatusFailed() string {
+	return od.statusFailed
+}
+
+func (od OrderDish) GetReadyStatus() bool {
+	return od.isReady
+}

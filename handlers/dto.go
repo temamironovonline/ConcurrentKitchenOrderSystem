@@ -5,6 +5,7 @@ import (
 
 	"main.go/dish"
 	"main.go/order"
+	"main.go/statistics"
 )
 
 type ListDishesDTO struct {
@@ -62,7 +63,7 @@ type OrderDTO struct {
 func newOrderDTO(ord order.Snapshot) OrderDTO {
 	dishes := make([]DishDTO, 0, len(ord.Dishes))
 	for _, v := range ord.Dishes {
-		dishes = append(dishes, DishDTO{ID: v.ID, Name: v.Name, Status: string(v.Status)})
+		dishes = append(dishes, DishDTO{ID: v.ID, Name: v.Name, Status: string(v.Status), TimeCook: v.CookingTime, StatusFailed: v.StatusFailed})
 	}
 
 	o := OrderDTO{
@@ -72,4 +73,20 @@ func newOrderDTO(ord order.Snapshot) OrderDTO {
 	}
 
 	return o
+}
+
+type Stats struct {
+	AllDishCooked   int64 `json:"allDishProccessed"`
+	CompletedCooked int64 `json:"completed"`
+	FailCooked      int64 `json:"fail"`
+	OrderCookingNow int64 `json:"orderCookingNow"`
+}
+
+func NewStats(s *statistics.Statistics) Stats {
+	return Stats{
+		AllDishCooked:   s.GetTotalDishesProccesed(),
+		CompletedCooked: s.GetCompletedCooked(),
+		FailCooked:      s.GetFailedCooked(),
+		OrderCookingNow: s.GetOrderCookingNow(),
+	}
 }

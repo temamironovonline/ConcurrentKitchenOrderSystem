@@ -118,3 +118,16 @@ func (h *HTTPHandlers) HandleCancelOrder(w http.ResponseWriter, r *http.Request)
 	orderDTO := newOrderDTO(snap)
 	writeAnswerJSON(w, orderDTO, http.StatusOK)
 }
+
+func (h *HTTPHandlers) HandleGetStatistics(w http.ResponseWriter, r *http.Request) {
+	stats := h.c.GetStatistics()
+
+	if stats == nil {
+		writeAnswerError(w, "статистика пока не создана", http.StatusInternalServerError)
+		return
+	}
+
+	answer := NewStats(stats)
+
+	writeAnswerJSON(w, answer, http.StatusOK)
+}
