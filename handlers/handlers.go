@@ -13,15 +13,18 @@ import (
 )
 
 const (
+	// DefaultTimeOrder хранит в себе стандартный таймаут на одно блюдо
 	DefaultTimeoutOrder = 30 * time.Second
 )
 
+// HTTPHandlers структура, отвечающая за хендлеры
 type HTTPHandlers struct {
 	ctx                    context.Context
 	c                      *chef.Chef
 	listAvailabilityDishes *dish.ListAvailabilityDishes
 }
 
+// NewHTTPHandlers создает экземпляр структуры HTTPHandlers
 func NewHTTPHandlers(ctx context.Context, c *chef.Chef, listAvailabilityDishes *dish.ListAvailabilityDishes) *HTTPHandlers {
 	return &HTTPHandlers{
 		ctx:                    ctx,
@@ -47,6 +50,7 @@ func writeAnswerError(w http.ResponseWriter, text string, statusCode int) {
 	}
 }
 
+// HandleCreateOrder хендлер создания заказа
 func (h *HTTPHandlers) HandleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	var listDTO ListDishesDTO
 	if err := json.NewDecoder(r.Body).Decode(&listDTO); err != nil {
@@ -68,7 +72,7 @@ func (h *HTTPHandlers) HandleCreateOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	ans := NewCreateOrderAnswerDTO(id, time.Now())
+	ans := NewReturnID(id, time.Now())
 	writeAnswerJSON(w, ans, http.StatusCreated)
 }
 
@@ -84,6 +88,7 @@ func getPathValue(r *http.Request) (int, bool) {
 	return id, true
 }
 
+// HandleGetIntermediateResult хендлер для получения информации о конкретном блюде
 func (h *HTTPHandlers) HandleGetIntermediateResult(w http.ResponseWriter, r *http.Request) {
 	id, ok := getPathValue(r)
 	if !ok {
@@ -97,11 +102,12 @@ func (h *HTTPHandlers) HandleGetIntermediateResult(w http.ResponseWriter, r *htt
 		return
 	}
 
-	orderDTO := newOrderDTO(snap)
+	orderDTO := NewOrderDTO(snap)
 
 	writeAnswerJSON(w, orderDTO, http.StatusOK)
 }
 
+// HandleCancelOrder хендлер для отмены заказа
 func (h *HTTPHandlers) HandleCancelOrder(w http.ResponseWriter, r *http.Request) {
 	id, ok := getPathValue(r)
 	if !ok {
@@ -115,10 +121,11 @@ func (h *HTTPHandlers) HandleCancelOrder(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	orderDTO := newOrderDTO(snap)
+	orderDTO := NewOrderDTO(snap)
 	writeAnswerJSON(w, orderDTO, http.StatusOK)
 }
 
+// HandleGetStatistics используется для получения статистики
 func (h *HTTPHandlers) HandleGetStatistics(w http.ResponseWriter, r *http.Request) {
 	stats := h.c.GetStatistics()
 

@@ -34,7 +34,7 @@ func (od *OrderList) GetOrderSnapshot(id int) (order.Snapshot, error) {
 		return order.Snapshot{}, ErrOrderNotFound
 	}
 
-	return o.Snapshot(), nil
+	return o.NewSnapshot(), nil
 }
 
 func (od *OrderList) GetOrder(id int) (*order.Order, error) {

@@ -13,7 +13,7 @@ type AvailabilityDish struct {
 	timeCook time.Duration
 }
 
-// NewAvailabilityDishes создает новое блюдо
+// NewAvailabilityDishes создает новое блюдо для меню
 func NewAvailabilityDishes(nameDish string, stat consts.ClassStation, t time.Duration) AvailabilityDish {
 	return AvailabilityDish{
 		name:     nameDish,
@@ -22,6 +22,7 @@ func NewAvailabilityDishes(nameDish string, stat consts.ClassStation, t time.Dur
 	}
 }
 
+// GetTimeout предназначен для получения времени за сколько должно приготовиться блюдо
 func (ad AvailabilityDish) GetTimeout() time.Duration {
 	return ad.timeCook
 }

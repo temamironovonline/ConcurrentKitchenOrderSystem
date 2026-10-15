@@ -12,6 +12,7 @@ import (
 var idCounter int = 1
 var mtxID sync.Mutex
 
+// StatusCook для определения различных статусов готовности блюда
 type StatusCook string
 
 const (
@@ -47,6 +48,7 @@ func NewOrderDish(dish AvailabilityDish) OrderDish {
 	return newDish
 }
 
+// UpdateOrderDish представляет собой тип, который хранит в себе обновленную информацию о блюде, чтобы потом перенести ее в основное блюдо
 type UpdateOrderDish struct {
 	id           int
 	isReady      bool
@@ -55,6 +57,7 @@ type UpdateOrderDish struct {
 	statusFailed string
 }
 
+// NewUpdateOrderDish создает экземпляр типа
 func NewUpdateOrderDish(isReady bool, cookingTime *time.Duration, errText error) UpdateOrderDish {
 	var status StatusCook
 	var statusFailed string
@@ -82,6 +85,7 @@ func NewUpdateOrderDish(isReady bool, cookingTime *time.Duration, errText error)
 	}
 }
 
+// Snapshot тип, который используется для передачи информации в handler и ответа пользователю
 type Snapshot struct {
 	ID           int
 	Name         string
@@ -90,27 +94,33 @@ type Snapshot struct {
 	StatusFailed string
 }
 
+// Snapshot метод, который создает экземпляр типа Snapshot
 func (od OrderDish) Snapshot() Snapshot {
 	return Snapshot{ID: od.id, Name: od.GetName(), Status: od.status, CookingTime: od.cookingTime, StatusFailed: od.statusFailed}
 }
 
+// GetStatus позволяет получить статус приготовления блюда
 func (uod UpdateOrderDish) GetStatus() StatusCook {
 	return uod.status
 }
 
+// SetID позволяет установить ID для обновляемых данных по блюду
 func (uod UpdateOrderDish) SetID(id int) UpdateOrderDish {
 	uod.id = id
 	return uod
 }
 
+// GetStatusFailed предназначен для получения причины провала блюда типа UpdateOrderDish. Если провала не было, то и вернется пустая строка
 func (uod UpdateOrderDish) GetStatusFailed() string {
 	return uod.statusFailed
 }
 
+// GetTimeout предназначен для получения заданного времени приготовления блюда
 func (od OrderDish) GetTimeout() time.Duration {
 	return od.dish.GetTimeout()
 }
 
+// Update предназначен для обновления данных о блюде
 func (od OrderDish) Update(newOD UpdateOrderDish) OrderDish {
 	od.isReady = newOD.isReady
 	od.cookingTime = newOD.cookingTime
@@ -119,26 +129,32 @@ func (od OrderDish) Update(newOD UpdateOrderDish) OrderDish {
 	return od
 }
 
+// GetID получение ID блюда
 func (od OrderDish) GetID() int {
 	return od.id
 }
 
+// GetStation получение станции, на которой готовится блюдо
 func (od OrderDish) GetStation() consts.ClassStation {
 	return od.dish.stat
 }
 
+// GetName получение названия блюда
 func (od OrderDish) GetName() string {
 	return od.dish.name
 }
 
+// GetStatus получение статуса приготовления блюда
 func (od OrderDish) GetStatus() StatusCook {
 	return od.status
 }
 
+// GetStatusFailed получение причины провала блюда у главного экземпляра блюда
 func (od OrderDish) GetStatusFailed() string {
 	return od.statusFailed
 }
 
+// GetReadyStatus получение информации готово блюдо или нет
 func (od OrderDish) GetReadyStatus() bool {
 	return od.isReady
 }

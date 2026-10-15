@@ -9,17 +9,20 @@ import (
 	"main.go/dish"
 )
 
+// List представляет собой список заказанных блюд в одном заказе
 type List struct {
 	mtx  sync.RWMutex
 	list map[int]dish.OrderDish
 }
 
+// NewList() создает новый список
 func NewList() *List {
 	return &List{
 		list: make(map[int]dish.OrderDish),
 	}
 }
 
+// GetByID предназначен для получения заказа по его ID
 func (l *List) GetByID(id int) (dish.OrderDish, error) {
 	l.mtx.RLock()
 	defer l.mtx.RUnlock()
@@ -32,6 +35,7 @@ func (l *List) GetByID(id int) (dish.OrderDish, error) {
 	return dis, nil
 }
 
+// Add добавляет заказанное блюдо в список
 func (l *List) Add(d dish.OrderDish) {
 	l.mtx.Lock()
 	defer l.mtx.Unlock()
@@ -42,6 +46,7 @@ func (l *List) Add(d dish.OrderDish) {
 	l.list[d.GetID()] = d
 }
 
+// Update обновляет информацию о блюде
 func (l *List) Update(d dish.OrderDish, od dish.UpdateOrderDish) (dish.OrderDish, error) {
 	l.mtx.Lock()
 	defer l.mtx.Unlock()
@@ -55,6 +60,7 @@ func (l *List) Update(d dish.OrderDish, od dish.UpdateOrderDish) (dish.OrderDish
 	return new, nil
 }
 
+// Get предназначен для получения копии списка заказанных блюд
 func (l *List) Get() map[int]dish.OrderDish {
 	l.mtx.RLock()
 	defer l.mtx.RUnlock()
@@ -67,6 +73,7 @@ func (l *List) Get() map[int]dish.OrderDish {
 	return tmp
 }
 
+// Snapshots используется для получения блюд для отправки информации пользователю
 func (l *List) Snapshots() []dish.Snapshot {
 	l.mtx.RLock()
 	defer l.mtx.RUnlock()

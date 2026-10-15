@@ -13,6 +13,7 @@ import (
 var mtxID sync.Mutex
 var idCounter int = 1
 
+// OrderStatus предназначен для обозначения статусов приготовления заказа
 type OrderStatus string
 
 const (
@@ -23,6 +24,7 @@ const (
 	StatusFailed   OrderStatus = "failed"
 )
 
+// Order структура, хранящая информацию о заказе
 type Order struct {
 	mtx        sync.RWMutex
 	id         int
@@ -31,12 +33,14 @@ type Order struct {
 	status     OrderStatus
 }
 
+// Snapshot предназначен для передачи информации в хендлер, с последующей отправкой пользователю
 type Snapshot struct {
 	ID     int
 	Status string
 	Dishes []dish.Snapshot
 }
 
+// NewOrder создает новый заказ
 func NewOrder(ctx context.Context, timeout time.Duration, menu *dish.ListAvailabilityDishes, dishes []string) (*Order, context.Context, error) {
 	specs := make([]dish.AvailabilityDish, 0, len(dishes))
 	for _, name := range dishes {
@@ -67,7 +71,8 @@ func NewOrder(ctx context.Context, timeout time.Duration, menu *dish.ListAvailab
 	return order, ctxOrder, nil
 }
 
-func (o *Order) Snapshot() Snapshot {
+// NewSnapshot функция, которая делает Snapshot
+func (o *Order) NewSnapshot() Snapshot {
 	o.mtx.RLock()
 	defer o.mtx.RUnlock()
 
@@ -78,12 +83,14 @@ func (o *Order) Snapshot() Snapshot {
 	}
 }
 
+// GetID позволяет получить ID заказа
 func (o *Order) GetID() int {
 	o.mtx.RLock()
 	defer o.mtx.RUnlock()
 	return o.id
 }
 
+// Dishes позволяет получить копию блюд в заказе
 func (o *Order) Dishes() map[int]dish.OrderDish {
 	o.mtx.RLock()
 	defer o.mtx.RUnlock()
@@ -91,12 +98,14 @@ func (o *Order) Dishes() map[int]dish.OrderDish {
 	return tmp
 }
 
+// UpdateDish предназначен для обновления информации о блюде
 func (o *Order) UpdateDish(d dish.OrderDish, od dish.UpdateOrderDish) {
 	o.mtx.Lock()
 	defer o.mtx.Unlock()
 	o.listDishes.Update(d, od)
 }
 
+// Finish используется, когда по какой-то из причин приготовление блюда было закончено
 func (o *Order) Finish(err error) {
 	o.mtx.Lock()
 	defer o.mtx.Unlock()
@@ -128,6 +137,7 @@ func (o *Order) Finish(err error) {
 	}
 }
 
+// Cancel предназначен для отмены заказа
 func (o *Order) Cancel() {
 	o.Finish(context.Canceled)
 }

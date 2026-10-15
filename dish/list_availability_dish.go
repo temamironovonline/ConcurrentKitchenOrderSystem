@@ -7,11 +7,13 @@ import (
 	"main.go/consts"
 )
 
+// ListAvailabilityDishes представляет собой список доступных блюд (меню)
 type ListAvailabilityDishes struct {
 	mtx  sync.Mutex
 	list map[string]AvailabilityDish
 }
 
+// NewListAvailabilityDishes конструктор для создания, который заполняет блюда
 func NewListAvailabilityDishes() *ListAvailabilityDishes {
 	newList := &ListAvailabilityDishes{
 		list: make(map[string]AvailabilityDish),
@@ -56,6 +58,7 @@ func NewListAvailabilityDishes() *ListAvailabilityDishes {
 	return newList
 }
 
+// Get позволяет получить конкретное блюдо по названию
 func (ad *ListAvailabilityDishes) Get(name string) (AvailabilityDish, bool) {
 	ad.mtx.Lock()
 	defer ad.mtx.Unlock()
